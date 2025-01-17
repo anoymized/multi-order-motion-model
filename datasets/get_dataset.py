@@ -19,10 +19,10 @@ def get_dataset(all_cfg):
     ])
     co_transform = get_co_transforms(aug_args=all_cfg.data_aug)
 
-    if cfg.type == 'demo':
+    if cfg.type == 'Demo':
         co_transform.co_transforms.insert(0, sep_transforms.Zoom(*cfg.train_shape['general'], gray=False))
 
-        train_set_1 = SelfRender(cfg.root_val_specular, n_frames=cfg.train_n_frames,
+        train_set_1 = SelfRender(cfg.root_mini_diffuse, n_frames=cfg.train_n_frames,
                                  split='train',
                                  with_flow=True,
                                  transform=input_transform,
@@ -32,7 +32,7 @@ def get_dataset(all_cfg):
                                                    "mask": sep_transforms.ArrayToTensor()}
                                  )
 
-        train_set_4 = SelfRender(cfg.root_val_diffuse, n_frames=cfg.train_n_frames,
+        train_set_2 = SelfRender(cfg.root_mini_nondiffuse, n_frames=cfg.train_n_frames,
                                  split='train',
                                  with_flow=True,
                                  transform=input_transform,
@@ -42,7 +42,7 @@ def get_dataset(all_cfg):
                                                    "mask": sep_transforms.ArrayToTensor()}
                                  )
 
-        val1 = SelfRender(cfg.root_val_diffuse, n_frames=cfg.train_n_frames,
+        val1 = SelfRender(cfg.root_mini_diffuse, n_frames=cfg.train_n_frames,
                           split='train',
                           with_flow=True,
                           transform=input_transform,
@@ -52,7 +52,7 @@ def get_dataset(all_cfg):
                                             "mask": sep_transforms.ArrayToTensor()}
                           )
 
-        val2 = SelfRender(cfg.root_val_specular, n_frames=cfg.train_n_frames,
+        val2 = SelfRender(cfg.root_mini_nondiffuse, n_frames=cfg.train_n_frames,
                           split='train',
                           with_flow=True,
                           transform=input_transform,
@@ -62,15 +62,11 @@ def get_dataset(all_cfg):
                                             "mask": sep_transforms.ArrayToTensor()}
                           )
 
-        train_set = ConcatDataset([train_set_1, train_set_4])
+        train_set = ConcatDataset([train_set_1, train_set_2])
         valid_set = [val1, val2]
 
         print("Diffuse number %d" % len(train_set_1))
-        # print("Glass number %d" % len(train_set_2))
-        # print("Specular number %d" % len(train_set_3))
-        print("Diffuse val number %d" % len(val1))
-        print("Specular val number %d" % len(val2))
-
+        print("Specular number %d" % len(train_set_2))
 
     elif cfg.type == 'Dual-final':
         co_transform_gray = copy.deepcopy(co_transform)
@@ -285,20 +281,6 @@ def get_dataset(all_cfg):
         train_set = ConcatDataset([train1, train2, train3, train4])
         valid_set = train2
 
-
-    elif cfg.type == 'Test':
-        co_transform_sintel = copy.deepcopy(co_transform)
-        co_transform_sintel.co_transforms.insert(0, sep_transforms.Zoom(*[768, 768], gray=False))
-        train_set = NonTex(cfg.root_nontex, n_frames=cfg.train_n_frames,
-                           split='train',
-                           with_flow=True,
-                           transform=input_transform,
-                           co_transform=co_transform,
-                           target_transform={"flow": sep_transforms.ArrayToTensor(),
-                                             "flowsec": sep_transforms.ArrayToTensor(),
-                                             "mask": sep_transforms.ArrayToTensor()}
-                           )
-        valid_set = train_set
 
     else:
         raise ValueError("Unknown dataset type: {}".format(cfg.type))

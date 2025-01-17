@@ -230,7 +230,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', help="name your experiment", default='train_demo')
     parser.add_argument('--restore_ckpt', help="restore checkpoint",
-                        default='/home/2TSSD/experiment/secmotion-shared/modelckpt/dual_model_final.pth')
+                        default=None)
     # os.environ['WANDB_MODE'] = 'dryrun' # for debug
 
     parser.add_argument('--lr', type=float, default=0.8e-4)
