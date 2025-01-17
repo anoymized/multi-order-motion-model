@@ -1,6 +1,6 @@
-# Machine Learning Modeling for Multi-order Human Visual Motion Processing
+# Machine Learning Modeling for Multi-Order Human Visual Motion Processing
 
-This repository contains code and datasets for our research on developing machine learning models that mimic human visual motion perception. While state-of-the-art computer vision (CV) models, such as deep neural networks (DNNs), excel at estimating optical flow in naturalistic images, they often fall short of replicating the biological visual system’s ability to perceive **second-order motion** (i.e., motion of higher-order image features). Our biologically-inspired approach bridges this gap by proposing a model architecture aligned with psychophysical and physiological findings.
+This repository contains code and datasets for our research on developing machine learning models that mimic human visual motion perception. While state-of-the-art computer vision (CV) models, such as deep neural networks (DNNs), excel at estimating optical flow in naturalistic images, they often fall short of replicating the biological visual system’s ability to perceive **second-order motion** (i.e., motion of higher-order image features). Our biologically inspired approach bridges this gap by proposing a model architecture aligned with psychophysical and physiological findings.
 
 ---
 
@@ -92,8 +92,8 @@ fast-slic                     0.4.0
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/visual-motion-processing.git
-   cd visual-motion-processing
+   git clone https://github.com/anoymized/multi-order-motion-model.git
+   cd multi-order-motion-model
    ```
 2. **Set Up a Conda Environment (Recommended)**:
    ```bash
@@ -115,35 +115,42 @@ fast-slic                     0.4.0
 ### Testing the Model
 
 1. **Download Pretrained Model**  
-   Pretrained model checkpoints can be found at `[link-to-pretrained-model]`. 
-   
+   Pretrained model checkpoint can be found here:  
+   [Google Drive: dual_model_final.pth](https://drive.google.com/file/d/1dEDFArEk6N8V580aJtmZ-UGWlfCxSN7x/view?usp=sharing)
+
 2. **Demo Test Stimuli**  
-   A sample test stimulus folder (`demo`) is included. Make sure the model checkpoints are placed (or their paths specified) correctly in your environment.
+   A sample test stimulus folder (`demo`) is included. Make sure the model checkpoint is placed (or its path specified) correctly in your environment.
 
 3. **Run Motion Prediction**  
    ```bash
    python infer_motion.py \
-       --model_ckpt path/to/model.ckpt \
-       --video path/to/test_video.mp4
+       --model path/to/dual_model_final.pth \
+       --path path/to/test-stimuli
    ```
-   - This command will generate optical flow or motion predictions.
+   Example defaults in the script are:
+   ```python
+   parser.add_argument('--model', help="restore checkpoint",
+                       default="modelckpt/dual_model_final.pth")
+   parser.add_argument('--path', help="dataset for evaluation",
+                       default='demo/test-stimuli/segmentation/soapbox')
+   ```
+   Adjust these arguments (e.g., paths to the model checkpoint and test video folder) based on your local setup.
 
 4. **Run Segmentation**  
    ```bash
    python infer_segmentation.py \
-       --model_ckpt path/to/model.ckpt \
-       --video path/to/test_video.mp4
+       --model path/to/dual_model_final.pth \
+       --path path/to/test-stimuli
    ```
-   - This command will generate segmentation results.
-
-**Note:** Adjust script arguments (e.g., paths to the model checkpoint and test video) based on your local setup.
+   Similarly, you can edit the `--model` and `--path` parameters for different checkpoints and data paths.
 
 ---
 
 ### Training the Model
 
 1. **Download the Training Datasets**  
-   We provide two mini motion datasets featuring diffuse and non-diffuse objects, available at `[link-to-datasets]`.
+   We provide two mini motion datasets featuring diffuse and non-diffuse objects:  
+   [Google Drive: training datasets](https://drive.google.com/file/d/1vWx4C_uQI6Dd5Mn9BotCdvOLfn5nj4XN/view?usp=sharing)
 
 2. **Update Configuration**  
    - Modify the `configdict.py` file to point to your local dataset paths and adjust hyperparameters as needed.
@@ -160,8 +167,12 @@ fast-slic                     0.4.0
 
 - **Data & Model Responses**: Human psychophysical data and the model’s responses for second-order motion are located in the `second-order-exp` folder.
 - **Visualization**: Use the provided Jupyter notebooks in the `dataviz` folder to visualize and analyze results.
-- **Psychopy Protocol**: If you wish to run additional psychophysical experiments:
-  1. Download the second-order motion benchmark from `[link-to-second-order-benchmark]`.
+- **Second-Order Benchmark**:  
+  [Google Drive: second-order benchmark](https://drive.google.com/file/d/1IDmKI_9n8LBda-k4dWt8z7pIU4gxWlQ-/view?usp=sharing)
+
+- **Psychopy Protocol**:  
+  If you wish to run additional psychophysical experiments:
+  1. Download the second-order motion benchmark from the link above.
   2. Install `psychopy`.
   3. Run `TestTrial.py` for a demo, or `FormalExp.py` for the full experiment.
   4. Adjust `configure.py` to match your environment settings.
@@ -172,4 +183,3 @@ fast-slic                     0.4.0
 
 This project is licensed under the [Apache License 2.0](LICENSE). Please see the [LICENSE](LICENSE) file for more details.
 
----
