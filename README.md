@@ -106,7 +106,9 @@ fast-slic                     0.4.0
    pip install torch==2.0.0 torchvision==0.15.0
    pip install numpy==1.23.5 opencv-python==4.2.0.34 scipy==1.10.1 ...
    ```
-   *Continue installing until all required packages are successfully installed.*  
+   *Continue installing until all required packages are successfully installed.*
+   
+Typical install time: Within 30 mins
 
 ---
 
@@ -160,6 +162,8 @@ fast-slic                     0.4.0
    python train_full_model.py
    ```
    - The model will automatically save checkpoints and training logs to the specified outputs directory.
+  
+  Expected run time： several seconds or several minutes on GPU
 
 ---
 
