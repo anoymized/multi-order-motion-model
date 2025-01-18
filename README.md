@@ -177,8 +177,8 @@ Typical install time: Within 30 mins
 - **Psychopy Protocol**:  
   If you wish to run additional psychophysical experiments:
   1. Download the second-order motion benchmark from the link above.
-  2. Install `psychopy`.
-  3. Run `TestTrial.py` for a demo, or `FormalExp.py` for the full experiment.
+  2. Install `psychopy`. (Visit: [https://www.psychopy.org/download.html])
+  3. Run `TestTrial.py` for a demo or `FormalExp.py` for the full experiment.
   4. Adjust `configure.py` to match your environment settings.
 
 ---
