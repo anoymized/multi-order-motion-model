@@ -16,8 +16,7 @@ import datetime
 from utils.misc_utils import AverageMeter
 from utils.loss import sequence_loss
 
-# from signal import signal, SIGPIPE, SIG_DFL, SIG_IGN
-# signal(SIGPIPE, SIG_IGN)
+
 MAX_FLOW = 600
 
 

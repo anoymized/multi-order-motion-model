@@ -1,3 +1,4 @@
+
 # Machine Learning Modeling for Multi-Order Human Visual Motion Processing
 
 This repository contains code and datasets for our research on developing machine learning models that mimic human visual motion perception. While state-of-the-art computer vision (CV) models, such as deep neural networks (DNNs), excel at estimating optical flow in naturalistic images, they often fall short of replicating the biological visual system’s ability to perceive **second-order motion** (i.e., motion of higher-order image features). Our biologically inspired approach bridges this gap by proposing a model architecture aligned with psychophysical and physiological findings.
@@ -16,7 +17,9 @@ This repository contains code and datasets for our research on developing machin
 - [Usage](#usage)
   - [Testing the Model](#testing-the-model)
   - [Training the Model](#training-the-model)
+  - [Model Inference and Evaluation](#model-inference-and-evaluation)
 - [Human Data and Second-Order Benchmark](#human-data-and-second-order-benchmark)
+- [Data Render and Motion Data Generation](#data-render-and-motion-data-generation)
 - [License](#license)
 
 ---
@@ -30,7 +33,7 @@ Human visual systems exhibit remarkable robustness when interpreting complex mot
 2. **Recurrent Graph Network**  
    - Captures dynamic dependencies for robust motion representation.
 3. **Second-Order Motion Pathway**  
-   - Utilizes nonlinear preprocessing through a lightweight 3D CNN block.
+   - Utilizes nonlinear preprocessing through a naive 3D CNN block.
 
 This hybrid approach, which combines biologically plausible mechanisms with modern deep learning, achieves robust object motion estimation and generalizes well to both first- and second-order motion phenomena.
 
@@ -52,7 +55,7 @@ This hybrid approach, which combines biologically plausible mechanisms with mode
 ## System Requirements
 
 ### Hardware Requirements
-- A CUDA and cuDNN-supported GPU is strongly recommended due to the group-wise convolution used in the motion energy module.  
+- A CUDA and cuDNN-supported GPU is strongly recommended due to the group-wise convolution used in the motion energy module.
 - Running on CPU alone may be extremely time-consuming.
 
 ### Software Requirements
@@ -107,8 +110,8 @@ fast-slic                     0.4.0
    pip install numpy==1.23.5 opencv-python==4.2.0.34 scipy==1.10.1 ...
    ```
    *Continue installing until all required packages are successfully installed.*
-   
-Typical install time: Within 30 mins
+
+Typical install time: Within 30 minutes.
 
 ---
 
@@ -118,7 +121,7 @@ Typical install time: Within 30 mins
 
 1. **Download Pretrained Model**  
    Pretrained model checkpoint can be found here:  
-   [Google Drive: dual_model_final.pth](https://drive.google.com/file/d/1dEDFArEk6N8V580aJtmZ-UGWlfCxSN7x/view?usp=sharing)
+   [Hugging Face Space: final_sintel_kitti.pth](https://huggingface.co/datasets/sunana/mateiral-controlled-motion-dataset/blob/main/final_sintel_kitti.pth)
 
 2. **Demo Test Stimuli**  
    A sample test stimulus folder (`demo`) is included. Make sure the model checkpoint is placed (or its path specified) correctly in your environment.
@@ -152,7 +155,10 @@ Typical install time: Within 30 mins
 
 1. **Download the Training Datasets**  
    We provide two mini motion datasets featuring diffuse and non-diffuse objects:  
-   [Google Drive: training datasets](https://drive.google.com/file/d/1vWx4C_uQI6Dd5Mn9BotCdvOLfn5nj4XN/view?usp=sharing)
+   [Google Drive: Training Datasets](https://drive.google.com/file/d/1vWx4C_uQI6Dd5Mn9BotCdvOLfn5nj4XN/view?usp=sharing)  
+   You can use these to verify the effect of diffuse and non-diffuse data on second-order motion perception.  
+   Our full dataset (diffuse data, non-diffuse data, drifting grating, simple non-texture motion) is provided at:  
+   [Hugging Face Space](https://huggingface.co/datasets/sunana/mateiral-controlled-motion-dataset)
 
 2. **Update Configuration**  
    - Modify the `configdict.py` file to point to your local dataset paths and adjust hyperparameters as needed.
@@ -161,29 +167,50 @@ Typical install time: Within 30 mins
    ```bash
    python train_full_model.py
    ```
-   - The model will automatically save checkpoints and training logs to the specified outputs directory.
-  
-  Expected run time： several seconds or several minutes on GPU
+   The model will automatically save checkpoints and training logs to the specified outputs directory.
+
+---
+
+### Model Inference and Evaluation
+
+After you download our pretrained model, the `evaluate_human` folder contains scripts to generate the model responses. Files such as `infer_kitti2015.py`, `infer_sec_motion.py`, and `infer_sintel_slow.py` are provided for generating model responses on different datasets.
+
+**Note:**
+- You must first download the selected KITTI 2015, Sintel Slow, and second-order motion benchmark from Hugging Face:  
+  [Hugging Face Space](https://huggingface.co/datasets/sunana/mateiral-controlled-motion-dataset/tree/main)  
+  Then deploy the datasets at the correct addresses.
+- The selected KITTI dataset is located in `model_response_kitti.zip`.
+- MATLAB code for evaluation, data analysis, and human response of Sintel-slow and KITTI2015 is provided in the `evaluate_human/matlab_code` folder.
 
 ---
 
 ## Human Data and Second-Order Benchmark
 
-- **Data & Model Responses**: Human psychophysical data and the model’s responses for second-order motion are located in the `second-order-exp` folder.
-- **Visualization**: Use the provided Jupyter notebooks in the `dataviz` folder to visualize and analyze results.
-- **Second-Order Benchmark**:  
-  [Google Drive: second-order benchmark](https://drive.google.com/file/d/1IDmKI_9n8LBda-k4dWt8z7pIU4gxWlQ-/view?usp=sharing)
-
-- **Psychopy Protocol**:  
+- **Data & Model Responses:**  
+  Human psychophysical data and the model’s responses for second-order motion are located in the `second-order-exp` folder.
+- **Visualization:**  
+  Use the provided Jupyter notebooks in the `dataviz` folder to visualize and analyze results.
+- **Second-Order Benchmark:**  
+  [Hugging Face Space: human_static.zip](https://huggingface.co/datasets/sunana/mateiral-controlled-motion-dataset/tree/main)
+- **Psychopy Protocol:**  
   If you wish to run additional psychophysical experiments:
   1. Download the second-order motion benchmark from the link above.
-  2. Install `psychopy`. (Visit: [https://www.psychopy.org/download.html])
+  2. Install `psychopy` (visit [https://www.psychopy.org/download.html](https://www.psychopy.org/download.html)).
   3. Run `TestTrial.py` for a demo or `FormalExp.py` for the full experiment.
   4. Adjust `configure.py` to match your environment settings.
+
+---
+
+## Data Render and Motion Data Generation
+
+The `Data_Generator` folder contains scripts to generate both simple non-texture motion and second-order motion:
+- Run `create_nontexture_data.py` to generate simple non-texture motion.
+- Run `create_second_order_dataset.py` or `secondorder_human.py` to generate second-order motion.
+
+For rendering material-controlled data, refer to the README and scripts in the `material_data_render` folder.
 
 ---
 
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE). Please see the [LICENSE](LICENSE) file for more details.
-

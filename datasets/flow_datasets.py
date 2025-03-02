@@ -467,7 +467,7 @@ class SecondOrderSintel(ImgSeqDataset):
             img_list = img_scene.files('*.png')
             img_list.sort()
 
-            f_dir = self.root  / scene / flow1_dir
+            f_dir = self.root / scene / flow1_dir
             flo1_list = f_dir.files('*.flo')
             flo1_list.sort()
 
@@ -602,6 +602,47 @@ class GeneralDataLoader(ImgSeqDataset):
                     samples.append({'imgs': img_sample, 'flow': flow_sample})
                 else:
                     samples.append({'imgs': img_sample})
+        return samples
+
+
+class KITTIMF(ImgSeqDataset):
+
+    def __init__(self, root, n_frames=2, split='training',
+                 subsplit='trainval', with_flow=True, ap_transform=None,
+                 transform=None, target_transform=None, co_transform=None):
+
+        self.with_flow = with_flow
+        self.split = split
+        self.subsplit = subsplit
+
+        root = Path(root)
+        root = root / split
+        self.invalid_frames = ['000031', '000082']  # elimanate some miss data in KITTI
+        super(KITTIMF, self).__init__(root, n_frames, input_transform=transform,
+                                      target_transform=target_transform,
+                                      co_transform=co_transform, ap_transform=ap_transform,
+                                      with_flow=with_flow)
+
+    def collect_samples(self):
+        img_dir = "image_2"
+        flow_dir = "flow_occ"
+        samples = []
+
+        gt_flow_files = sorted(glob(str(self.root / flow_dir / '*_10.png')))
+
+        for gt_flow in gt_flow_files:
+            frame_id = osp.basename(gt_flow)[0:6]
+            if frame_id in self.invalid_frames:
+                continue
+            img_sample = []
+            for i in range(10 - 7, 10 + 7 + 1):  # range(3, 18)
+                img_path = self.root / img_dir / (frame_id + "_%02d.png" % i)
+                assert img_path.isfile(), f"Image file not found: {img_path}"
+                img_sample.append(self.root.relpathto(img_path))
+            flow_sample = str(self.root / flow_dir / (frame_id + "_10.png"))
+            flow_sample = self.root.relpathto(flow_sample)
+            assert len(img_sample) == self.n_frames, f"Invalid image sample length: {len(img_sample)}"
+            samples.append({'imgs': img_sample, 'flow': [flow_sample] * (self.n_frames - 1)})
         return samples
 
 

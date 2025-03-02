@@ -47,27 +47,44 @@ def multi_frame_sequence_loss(flow_preds_list, flow_gt_list, valid_list=None, ga
 
 def sequence_loss(flow_preds, flow_gt, valid=None, gamma=0.8, max_flow=400, smooth_term=0):
     """ Loss function defined over sequence of flow predictions """
-    # convert everything to float32
+    # 如果未给定 valid，则默认全部像素有效
     if valid is None:
         valid = torch.ones(flow_gt.size(0), 1, flow_gt.size(2), flow_gt.size(3)).to(flow_gt.device)
+
     flow_gt = flow_gt.float()
     valid = valid.float()
     flow_preds = [flow_pred.float() for flow_pred in flow_preds]
     n_predictions = len(flow_preds)
     flow_loss = 0.0
 
-    # exclude invalid pixels and extremely large diplacements
+    # 计算 flow_gt 的幅值
     mag = torch.sum(flow_gt ** 2, dim=1).sqrt().unsqueeze(1)
-    valid = ((valid >= 0.5) & (mag < max_flow)).float()
+    # nan_mask：对于 flow_gt 的任一通道为 nan，则认为该像素无效
+    nan_mask = torch.isnan(flow_gt).any(dim=1, keepdim=True)
+    # 提取有效区域：原始 valid, 位移小于 max_flow 且不含 nan
+    valid_mask = (valid >= 0.5) & (mag < max_flow) & (~nan_mask)
+    # 计算有效像素个数（转换为 float 累加）
+    valid_sum = valid_mask.float().sum() + 1e-4
+
+    # 计算所有预测的权重和（考虑 gamma 衰减）
+    total_weight = sum([gamma ** (n_predictions - i - 1) for i in range(n_predictions)])
+
     for i in range(n_predictions):
         i_weight = gamma ** (n_predictions - i - 1)
+        # 计算当前预测与 ground truth 的绝对误差
         i_loss = (flow_preds[i] - flow_gt).abs()
-        flow_loss += i_weight * (valid * i_loss).sum() / (2 * valid.sum() + 1e-4)
+        # 对无效位置用 0 替代，避免 0*nan 产生 nan
+        masked_loss = torch.where(valid_mask, i_loss, torch.zeros_like(i_loss))
+        flow_loss += i_weight * masked_loss.sum() / (2 * valid_sum)
         if smooth_term > 0:
-            flow_loss += smooth_term * i_weight * simple_flow_smoothness(flow_preds[i], 1 - valid)
-    flow_loss = flow_loss / len(flow_preds)
+            flow_loss += smooth_term * i_weight * simple_flow_smoothness(flow_preds[i], 1 - valid_mask.float())
+
+    # 根据总权重进行归一化
+    flow_loss = flow_loss / total_weight
+
+    # 计算 end-point error (EPE) 时，仅对有效区域进行统计
     epe = torch.sum((flow_preds[-1] - flow_gt) ** 2, dim=1).sqrt().unsqueeze(1)
-    epe = epe.view(-1)[valid.view(-1).bool()]
+    epe = epe.view(-1)[valid_mask.view(-1)]
 
     metrics = {
         'EPE': epe.mean().item(),

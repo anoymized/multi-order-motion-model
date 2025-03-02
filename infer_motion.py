@@ -246,11 +246,11 @@ def demo(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', help="restore checkpoint",
-                        default="modelckpt/dual_model_final.pth")
+                        default=None)
     parser.add_argument('--path', help="data folder for evaluation",
                         default='demo/test-stimuli/second-order/circular')
     parser.add_argument('--iters', help="number of iterations", type=int,
-                        default=5)  # should be odd number  when visualization
+                        default=8)  # should be odd number  when visualization
     parser.add_argument('--video', action='store_true', help='if save the video demo', default=True)
     parser.add_argument('--save_dir', help="save directory", default='result_v1mt')
     args = parser.parse_args()

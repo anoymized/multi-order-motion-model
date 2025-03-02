@@ -7,7 +7,6 @@ import sys
 sys.path.append('../')
 import argparse
 import numpy as np
-from tqdm import tqdm
 import re
 import datetime
 import PIL
@@ -140,10 +139,8 @@ def maskcut_forward_v1(feats, dims, scales, init_image_size, tau=0, N=3, cpu=Fal
         second_smallest_vec = eigenvectors[:, 1].cpu().numpy()
         eigenvec = second_smallest_vec.copy()
 
-
         # get salient area
         bipartition = get_salient_areas(second_smallest_vec)
-
 
         # check if we should reverse the partition based on:
         # 1) peak of the 2nd smallest eigvec 2) object centric bias
@@ -283,14 +280,14 @@ def maskcut_forward_ori(feats, dims, scales, init_image_size, tau=0, N=3, cpu=Fa
     return seed, bipartitions, eigvecs
 
 
-
 def maskcut_from_motion(attention, patch_size, tau=0.15, N=3):
     bipartitions, eigvecs = [], []
     feat_h, feat_w = attention.size()[2], attention.size()[3]
     attention = attention.view(-1, feat_h * feat_w)
     h, w = feat_h * patch_size, feat_w * patch_size
-    _, bipartition, eigvec = maskcut_forward_ori(attention, [feat_h, feat_w], [patch_size, patch_size], [h, w], tau, N=N,
-                                             cpu=False)
+    _, bipartition, eigvec = maskcut_forward_ori(attention, [feat_h, feat_w], [patch_size, patch_size], [h, w], tau,
+                                                 N=N,
+                                                 cpu=False)
 
     bipartitions += bipartition
     eigvecs += eigvec

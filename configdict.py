@@ -1,34 +1,32 @@
 from easydict import EasyDict as edict
 
 # Note please correct the path to the dataset accordingly
-config_dict = {"data": {"root_mini_diffuse": "/home/4TSSD/opticalflowdataset/sec/val_set/val_set_diffuse",
-                        "root_mini_nondiffuse": "/home/4TSSD/opticalflowdataset/sec/val_set/val_set_specular",
+config_dict = {"data": {"root_mini_diffuse": "path to your dataset",
+                        "root_mini_nondiffuse": "path to your dataset",
                         # "root_sintel_slow": "/home/4TSSD/opticalflowdataset/sintel_slow",
                         # "root_davis": "/home/4TSSD/opticalflowdataset/davis2016flow/",
                         # "root_sinwave1st": "/home/4TSSD/opticalflowdataset/Sinwave1st/",
-                        # "root_sinwave2nd": "/home/4TSSD/opticalflowdataset/Sinwave2nd/",
-                        # "root_sec": "/home/4TSSD/opticalflowdataset/sec/",
-                        # "root_sintelsec": "/home/4TSSD/opticalflowdataset/sec/sintel_sec",
-                        # "root_sec_test": "/home/4TSSD/opticalflowdataset/sec/testbenchmark",
                         # "root_glass": '/home/4TSSD/opticalflowdataset/sec/glass',
                         # "root_specular": '/home/4TSSD/opticalflowdataset/sec/specular',
-                        # "root_denoise1": '/home/4TSSD/opticalflowdataset/sec/noisescene1',
                         # "root_diffuse": '/home/4TSSD/opticalflowdataset/sec/dynamic',
                         # "root_diffuse_static": '/home/4TSSD/opticalflowdataset/sec/all_static',
                         # 'root_glass_dynamic': '/home/4TSSD/opticalflowdataset/sec/glass_dynamic',
                         # 'root_frosted_glass': '/home/4TSSD/opticalflowdataset/sec/frostedglass',
-                        "test_shape": [768, 768],  # resize the input image to this shape
+                        # 'root_kitti_2015': '../opticalflowdataset/kitti2015/data_scene_flow_multiview/',
+                        # 'root_kitti_2012': '../opticalflowdataset/kitti2012/data_stereo_flow_multiview/',
+                        "test_shape": [960, 448],  # resize the input image to this shape
                         "train_n_frames": 15,
-                        "type": "Demo",  # '"SecondOrderHuman",
+                        "type": "NMI6_KITTI",  # '"SecondOrderHuman",
                         "val_n_frames": 15,
                         "train_shape": {"general": [768, 768],
                                         "sintel": [1024, 448],
-                                        "sintel_2K": [2048, 872],}
+                                        "sintel_2K": [2048, 872],
+                                        "kitti": [960, 448]}
                         },
                "data_aug": {"crop": True,
                             "hflip": True,
-                            "vflip": True,  # "vflip": True,
-                            "para_crop": [384, 512],
+                            'vflip': True,
+                            "para_crop": [416, 768],
                             "swap": False},
                "train": {
                    "eval_first": False,

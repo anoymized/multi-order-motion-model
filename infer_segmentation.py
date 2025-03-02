@@ -313,7 +313,7 @@ def demo(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', help="restore checkpoint",
-                        default="modelckpt/dual_model_final.pth")
+                        default=None)
     parser.add_argument('--path', help="dataset for evaluation",
                         default='demo/test-stimuli/segmentation/soapbox')  # NatureSecondOrder/Cup
     parser.add_argument('--iters', help="number of iterations", type=int, default=8)

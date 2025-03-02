@@ -42,19 +42,17 @@ def load_flow(path):
             flow_file = flow_file[:, :, 1:]
             return flow_file
         else:
-            flo_file = cv2.imread(path, -1)
-            flo_img = flo_file[:, :, 2:0:-1].astype(np.float32)
-            invalid = (flo_file[:, :, 0] == 0)  # mask
-            flo_img = flo_img - 32768
-            flo_img = flo_img / 64
-            flo_img[np.abs(flo_img) < 1e-10] = 1e-10
-            flo_img[invalid, :] = 0
-            return flo_img
+            flow = cv2.imread(path, cv2.IMREAD_ANYDEPTH | cv2.IMREAD_COLOR)
+            flow = flow[:, :, ::-1].astype(np.float32)
+            flow, valid = flow[:, :, :2], flow[:, :, 2]
+            flow = (flow - 2 ** 15) / 64.0
+            flow[valid == 0] = np.nan
+            return flow
     elif path.endswith('.csv'):
         data = pd.read_csv(path)
         # read line "flow_vecx,flow_vecy"
-        flow_vecx = float(data.values[4,1])
-        flow_vecy = float(data.values[5,1])
+        flow_vecx = float(data.values[4, 1])
+        flow_vecy = float(data.values[5, 1])
         # read image to get the size of the flow
         img_path = path.replace(path.name, 'frame_0001.png')
         img = cv2.imread(img_path)
@@ -207,21 +205,35 @@ def flow_uv_to_colors(u, v, convert_to_bgr=False):
 
 
 # absolut color flow
-def flow_to_image(flow, max_flow=32):
+
+def flow_to_image(flow, max_flow=None):
+    """
+    将 flow 转为 RGB 图像用于可视化：
+      - 对于 NaN 区域，输出黑色（0,0,0）
+    """
+    # 如果有 nan 存在，使用 nanmax 计算最大流值
     if max_flow is not None:
         max_flow = max(max_flow, 1.)
     else:
-        max_flow = np.max(flow)
+        max_flow = np.nanmax(flow)
 
     n = 8
     u, v = flow[:, :, 0], flow[:, :, 1]
+    # 标记 nan 的位置
+    if np.isnan(u).any() or np.isnan(v).any():
+        nan_mask = np.isnan(u) | np.isnan(v)
+        flow[nan_mask] = [0, 0]
+
     mag = np.sqrt(np.square(u) + np.square(v))
     angle = np.arctan2(v, u)
     im_h = np.mod(angle / (2 * np.pi) + 1, 1)
     im_s = np.clip(mag * n / max_flow, a_min=0, a_max=1)
     im_v = np.clip(n - im_s, a_min=0, a_max=1)
-    im = hsv_to_rgb(np.stack([im_h, im_s, im_v], 2))
-    return (im * 255).astype(np.uint8)
+    im = hsv_to_rgb(np.stack([im_h, im_s, im_v], axis=2))
+    im = (im * 255).astype(np.uint8)
+    # 将 NaN 的像素设为黑色
+    # im[nan_mask] = [255, 255, 255]
+    return im
 
 
 # relative color
@@ -651,7 +663,6 @@ def plt_show_img_flow(img_list=[], flow_list=[], batch_index=0):
         ax1.set_xticks([])
         ax1.set_yticks([])
 
-
     if img_list[0].max() > 10:
         img_list = [img / 255.0 for img in img_list]
     if flow_list[0].max() > 10:
@@ -729,10 +740,15 @@ def plot_quiver(ax, flow, spacing, mask=None, show_win=None, margin=0, **kwargs)
     u = flow[:, :, 0]
     v = flow[:, :, 1] * -1  # ----------
 
+    valid_mask = ~(np.isnan(u) | np.isnan(v))
+    u[~valid_mask] = 0
+    v[~valid_mask] = 0
+
     kwargs = {**dict(angles="xy", scale_units="xy"), **kwargs}
     if mask is not None:
         ax.imshow(mask)
-    ax.quiver(x, y, u, v, color="black", scale=200, width=0.015, headwidth=2, minlength=0.5,alpha=0.5)  # bigger is short
+    ax.quiver(x, y, u, v, color="black", scale=200, width=0.015, headwidth=2, minlength=0.5,
+              alpha=0.5)  # bigger is short
     # ax.quiver(x, y, u, v, color="black")  # bigger is short
     x_gird, y_gird = np.meshgrid(x, y)
     ax.scatter(x_gird, y_gird, c="black", s=(h + w) // 150)
@@ -766,7 +782,11 @@ def save_img_seq(img_list, batch_index=0, name='img', if_debug=False):
 
 
 def check_tensor_all(flow_vec1, flow_vec2, flow_vec1_pre, flow_vec2_pre, image1, image2, mask, enable=False):
-    # if batchsize is not 1, then only show the first one
+    """
+    将输入的 tensor 转换为 numpy 数组并进行可视化，
+    对于 flow 中的 NaN 区域，背景显示为黑色且不绘制箭头。
+    """
+    # 如果 batchsize > 1，仅取第一个样本
     if flow_vec1.shape[0] != 1:
         flow_vec1 = flow_vec1[0]
         flow_vec2 = flow_vec2[0]
@@ -776,6 +796,7 @@ def check_tensor_all(flow_vec1, flow_vec2, flow_vec1_pre, flow_vec2_pre, image1,
         image2 = image2[0]
         mask = mask[0]
 
+    # 转换 flow 为 numpy 并调整通道顺序
     flow_vec1 = flow_vec1.detach().cpu().squeeze().numpy().transpose([1, 2, 0])
     vis_flow_1 = flow_to_image(flow_vec1)
     flow_vec2 = flow_vec2.detach().cpu().squeeze().numpy().transpose([1, 2, 0])
@@ -784,40 +805,50 @@ def check_tensor_all(flow_vec1, flow_vec2, flow_vec1_pre, flow_vec2_pre, image1,
     vis_flow_1_pre = flow_to_image(flow_vec1_pre)
     flow_vec2_pre = flow_vec2_pre.detach().cpu().squeeze().numpy().transpose([1, 2, 0])
     vis_flow_2_pre = flow_to_image(flow_vec2_pre)
+
+    # 转换 image，并归一化（如果值较大，则假定为 0-255 范围）
     image1 = image1.detach().cpu().squeeze().numpy().transpose([1, 2, 0])
     image2 = image2.detach().cpu().squeeze().numpy().transpose([1, 2, 0])
-
     if image1.max() > 10:
         image1 = image1 / 255.0
         image2 = image2 / 255.0
+
     mask = mask.detach().cpu().squeeze().numpy()
+
+    # 绘制 2x3 子图
     fig, axes = plt.subplots(2, 3, figsize=(10, 5))
     ax1 = axes[0, 0]
     plot_quiver(ax1, flow=flow_vec1, mask=vis_flow_1, spacing=40)
     ax1.set_title('flow first')
+
     ax2 = axes[0, 1]
     plot_quiver(ax2, flow=flow_vec2, mask=vis_flow_2, spacing=40)
     ax2.set_title('flow second')
+
     ax3 = axes[0, 2]
     plot_quiver(ax3, flow=flow_vec1_pre, mask=vis_flow_1_pre, spacing=40)
     ax3.set_title('flow first pre')
+
     ax4 = axes[1, 0]
     plot_quiver(ax4, flow=flow_vec2_pre, mask=vis_flow_2_pre, spacing=40)
     ax4.set_title('flow second pre')
+
     ax5 = axes[1, 1]
     ax5.imshow(image1)
     ax5.set_title('image first')
+
     ax6 = axes[1, 2]
-    ax6.imshow(mask)
+    ax6.imshow(mask, cmap='gray')
     ax6.set_title('mask')
 
     if enable:
         plt.show()
-    # concert the image to numpy array and return
-    buffer_ = BytesIO()  # using buffer,great way!
+
+    # 将图像保存到内存中，并转换为 numpy 数组返回
+    buffer_ = BytesIO()
     plt.savefig(buffer_, format='png')
     buffer_.seek(0)
-    image = np.asarray(Image.open(buffer_))
+    out_img = np.asarray(Image.open(buffer_))
     buffer_.close()
     plt.close()
-    return image
+    return out_img

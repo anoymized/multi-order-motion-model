@@ -4,8 +4,8 @@ from skimage.color import rgb2gray as c2gray
 from skimage.color import gray2rgb as gray2rgb
 import cv2
 
-cv2.ocl.setUseOpenCL(False)  # 设置opencv不使用多进程运行，但这句命令只在本作用域有效。
-cv2.setNumThreads(0)  #
+cv2.ocl.setUseOpenCL(False)
+# cv2.setNumThreads(0)  #
 
 
 class ArrayToTensor(object):
@@ -23,15 +23,59 @@ class ArrayToTensor(object):
         return tensor.float()
 
 
+def fill_nan_with_neighbor_average_5x5(flow):
+    filled_flow = np.copy(flow)
+    H, W, C = flow.shape
+    kernel_size = 5
+
+    for c in range(C):
+        channel = filled_flow[..., c]
+        valid = ~np.isnan(channel) #
+        channel_filled = np.where(valid, channel, 0).astype(np.float32)
+
+        sum_conv = cv2.boxFilter(channel_filled, ddepth=-1, ksize=(kernel_size, kernel_size), normalize=False)
+
+        count_conv = cv2.boxFilter(valid.astype(np.float32), ddepth=-1, ksize=(kernel_size, kernel_size), normalize=False)
+        fill_mask = np.isnan(channel) & (count_conv > 0)
+        channel[fill_mask] = sum_conv[fill_mask] / count_conv[fill_mask]
+        filled_flow[..., c] = channel
+
+    return filled_flow
+
+
 def resize_flow(flow, shape):
-    assert flow.shape[-1] == 2
-    W, H = *shape,
+    """This method can avoid the NAN diffuse in KITTI dataset"""
+    assert flow.shape[-1] == 2, "Flow must have 2 channels."
+    W, H = shape  # shape 为 (W, H)
     h, w = flow.shape[:2]
-    flow = np.copy(flow)
-    flow[:, :, 0] = flow[:, :, 0] / w * W
-    flow[:, :, 1] = flow[:, :, 1] / h * H
-    flow = cv2.resize(flow, (W, H), interpolation=cv2.INTER_LINEAR)
-    return flow
+
+    # 没有 NaN，直接使用原有方法
+    if not np.isnan(flow).any():
+        flow_resized = np.copy(flow)
+        flow_resized[:, :, 0] = flow_resized[:, :, 0] / w * W
+        flow_resized[:, :, 1] = flow_resized[:, :, 1] / h * H
+        flow_resized = cv2.resize(flow_resized, (W, H), interpolation=cv2.INTER_LINEAR)
+        return flow_resized
+    else:
+
+        flow_scaled = np.copy(flow)
+        flow_scaled[:, :, 0] = flow_scaled[:, :, 0] / w * W
+        flow_scaled[:, :, 1] = flow_scaled[:, :, 1] / h * H
+
+        orig_valid_mask = ~(np.isnan(flow_scaled[..., 0]) | np.isnan(flow_scaled[..., 1]))
+        up_orig_mask = cv2.resize(orig_valid_mask.astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST).astype(
+            bool)
+
+
+        filled_flow = fill_nan_with_neighbor_average_5x5(flow_scaled)
+        up_filled_flow = cv2.resize(filled_flow, (W, H), interpolation=cv2.INTER_LINEAR)
+        up_filled_valid_mask = ~(np.isnan(up_filled_flow[..., 0]) | np.isnan(up_filled_flow[..., 1]))
+
+
+        final_mask = up_orig_mask | up_filled_valid_mask
+        up_filled_flow[~final_mask] = np.nan
+
+        return up_filled_flow
 
 
 class Zoom(object):
